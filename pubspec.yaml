@@ -1,0 +1,48 @@
+name: tawjeeh_antenna_align
+description: "برنامج توجيه هوائيات الشبكات ومحاذاة الروابط اللاسلكية بدقة بالبوصلة والـ GPS"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  
+  # Location and Sensors
+  geolocator: ^12.0.0
+  flutter_compass: ^0.8.0
+  sensors_plus: ^5.0.1
+  
+  # Network & Realtime Sync (Zero-config MQTT for live link rooms)
+  mqtt_client: ^10.2.0
+  http: ^1.2.1
+  
+  # Audio, Haptics & Vibration
+  vibration: ^2.0.1
+  audioplayers: ^6.0.0
+  
+  # Camera & AR
+  camera: ^0.11.0+1
+  permission_handler: ^11.3.1
+  
+  # Local Storage & Utilities
+  shared_preferences: ^2.2.3
+  intl: any
+  share_plus: any
+  qr_flutter: ^4.1.0
+  mobile_scanner: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/sounds/
+    - assets/icons/

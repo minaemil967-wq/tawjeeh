@@ -1,0 +1,68 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build APK (Release)
+        run: flutter build apk --release --android-skip-build-dependency-validation
+
+      - name: Rename APK for Clarity
+        run: cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/Tawjeeh-v1.0.apk
+
+      - name: Upload APK to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tawjeeh-release-apk
+          path: build/app/outputs/flutter-apk/Tawjeeh-v1.0.apk
+          retention-days: 30
+
+      - name: Create / Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        with:
+          tag_name: v1.0.0
+          name: "Tawjeeh Pro v1.0.0 (Release APK)"
+          body: |
+            ### تطبيق توجيه ومحاذاة هوائيات الشبكات والربط اللاسلكي بدقة (Tawjeeh Pro) 📡🧭
+            
+            - يدعم الاتصال المباشر بين هاتفين أو أكثر في نفس الغرفة الحية.
+            - بوصلة هندسية 360 درجة مع حساب السمت والميل الرأسي وقوس فتحة الشعاع (Beamwidth).
+            - ميزان ماء رقمي لضبط زاوية الرفع والخفض للأنتينا.
+            - تنبيهات اهتزاز وصفير رادار عند المحاذاة التامة وجهاً لوجه.
+            - وضع كاميرا الواقع المعزز (AR Camera HUD).
+            - وضع الأماكن النائية بدون إنترنت (Offline Mode).
+            
+            **طريقة التثبيت:**
+            قم بتحميل ملف `Tawjeeh-v1.0.apk` المرفق وتثبيته مباشرة على هواتف الأندرويد.
+          files: build/app/outputs/flutter-apk/Tawjeeh-v1.0.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

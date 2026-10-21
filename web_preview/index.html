@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>توجيه برو | محاذاة هوائيات الشبكات (Tawjeeh Pro)</title>
+  <meta name="theme-color" content="#0f172a">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <!-- Paho MQTT for zero-config live sync between two or more phones -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+  <style>
+    :root {
+      --bg-dark: #0b1120;
+      --panel-bg: #1e293b;
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --cyan: #00e5ff;
+      --cyan-glow: rgba(0, 229, 255, 0.35);
+      --green: #10b981;
+      --green-glow: rgba(16, 185, 129, 0.45);
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    header {
+      background: var(--panel-bg);
+      border-bottom: 1px solid var(--panel-border);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #00e5ff, #0284c7);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px var(--cyan-glow);
+    }
+
+    .brand-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: #000;
+    }
+
+    .brand-text h1 {
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1.1;
+      color: #fff;
+    }
+
+    .brand-text span {
+      font-size: 10px;
+      color: var(--cyan);
+      letter-spacing: 0.5px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--panel-border);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .btn-icon.active {
+      background: var(--cyan);
+      color: #000;
+      box-shadow: 0 0 12px var(--cyan-glow);
+    }
+
+    .badge-counter {
+      position: absolute;
+      top: -4px;
+      left: -4px;
+      background: var(--green);
+      color: #000;
+      font-size: 10px;
+      font-weight: 800;
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    main {
+      flex: 1;
+      padding: 14px;
+      max-width: 600px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Status & Room Banner */
+    .room-bar {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .room-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--red);
+      box-shadow: 0 0 8px var(--red);
+    }
+
+    .status-dot.online {
+      background: var(--green);
+      box-shadow: 0 0 10px var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.15); }
+    }
+
+    .room-code-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--cyan);
+      background: rgba(0, 229, 255, 0.1);
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(0, 229, 255, 0.25);
+    }
+
+    .btn-sm {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid var(--panel-border);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Target Device Switcher Bar */
+    .target-bar {
+      background: rgba(0, 229, 255, 0.08);
+      border: 1px solid rgba(0, 229, 255, 0.3);
+      border-radius: 12px;
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .target-title {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .target-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--cyan);
+    }
+
+    /* Guidance Banner */
+    .guidance-box {
+      border-radius: 16px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: all 0.3s ease;
+      background: rgba(15, 23, 42, 0.9);
+      border: 2px solid var(--panel-border);
+    }
+
+    .guidance-box.locked {
+      background: rgba(16, 185, 129, 0.18);
+      border-color: var(--green);
+      box-shadow: 0 0 25px var(--green-glow);
+    }
+
+    .guidance-box.approaching {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: var(--amber);
+    }
+
+    .guidance-icon {
+      font-size: 28px;
+      min-width: 36px;
+      text-align: center;
+    }
+
+    .guidance-text h2 {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .guidance-text p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Compass Container */
+    .compass-wrapper {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      max-height: 330px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas#compassCanvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+    .compass-center-hud {
+      position: absolute;
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #1e293b 0%, #0b1120 100%);
+      border: 2.5px solid var(--cyan);
+      box-shadow: 0 0 20px rgba(0, 229, 255, 0.25);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .compass-center-hud.locked {
+      border-color: var(--green);
+      box-shadow: 0 0 30px var(--green-glow);
+    }
+
+    .hud-heading {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 26px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .hud-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Spirit Level / Tilt Gauge */
+    .level-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      padding: 12px 16px;
+    }
+
+    .level-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .level-tube {
+      width: 100%;
+      height: 32px;
+      background: #0b1120;
+      border-radius: 16px;
+      border: 1px solid var(--panel-border);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .level-center-mark {
+      position: absolute;
+      width: 44px;
+      height: 100%;
+      border-left: 2px dashed rgba(16, 185, 129, 0.5);
+      border-right: 2px dashed rgba(16, 185, 129, 0.5);
+      pointer-events: none;
+    }
+
+    .level-bubble {
+      position: absolute;
+      width: 40px;
+      height: 24px;
+      background: linear-gradient(135deg, var(--amber), #d97706);
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: #000;
+      transition: transform 0.1s linear, background 0.3s;
+    }
+
+    .level-bubble.aligned {
+      background: linear-gradient(135deg, var(--green), #059669);
+      box-shadow: 0 0 15px var(--green-glow);
+    }
+
+    /* Metrics Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .metric-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 10px 14px;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    .metric-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .metric-sub {
+      font-size: 10px;
+      color: var(--cyan);
+      margin-top: 2px;
+    }
+
+    /* Antenna Selector */
+    .antenna-bar {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    select.antenna-select {
+      background: #0b1120;
+      color: #fff;
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-family: inherit;
+      font-size: 12px;
+      outline: none;
+    }
+
+    /* AR Camera Fullscreen Overlay */
+    .ar-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+    }
+
+    .ar-overlay.active {
+      display: flex;
+    }
+
+    video#arVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .ar-hud-elements {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .ar-reticle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80px;
+      height: 80px;
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 50%;
+    }
+
+    .ar-reticle::before, .ar-reticle::after {
+      content: '';
+      position: absolute;
+      background: #fff;
+    }
+    .ar-reticle::before { top: 50%; left: -10px; width: 100px; height: 1.5px; transform: translateY(-50%); }
+    .ar-reticle::after { left: 50%; top: -10px; height: 100px; width: 1.5px; transform: translateX(-50%); }
+
+    .ar-target-marker {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: all 0.1s linear;
+    }
+
+    .ar-target-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 2px solid var(--cyan);
+      box-shadow: 0 0 15px var(--cyan);
+      background: rgba(0, 229, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .ar-target-marker.locked .ar-target-icon {
+      border-color: var(--green);
+      box-shadow: 0 0 25px var(--green);
+      background: rgba(16, 185, 129, 0.35);
+    }
+
+    .ar-target-label {
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      margin-top: 4px;
+      white-space: nowrap;
+    }
+
+    .ar-close-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+
+    /* Modal Backdrop */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(4px);
+      z-index: 90;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 18px;
+      padding: 20px;
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-card h3 {
+      font-size: 17px;
+      color: #fff;
+    }
+
+    .input-field {
+      width: 100%;
+      background: #0b1120;
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .input-field:focus {
+      border-color: var(--cyan);
+    }
+
+    .btn-primary {
+      background: var(--cyan);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 10px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Peer List Item */
+    .peer-item {
+      background: #0b1120;
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .peer-item.selected {
+      border-color: var(--green);
+      background: rgba(16, 185, 129, 0.1);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+      </div>
+      <div class="brand-text">
+        <h1>توجيه برو</h1>
+        <span>MULTI-PEER ALIGN</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <!-- Multi-Device List Button -->
+      <button class="btn-icon" id="btnPeersList" title="الأجهزة المتصلة">
+        📱
+        <span class="badge-counter" id="peersBadge">0</span>
+      </button>
+      <button class="btn-icon active" id="btnAudio" title="صوت الرادار والتنبيه">
+        🔊
+      </button>
+      <button class="btn-icon" id="btnArCam" title="وضع الواقع المعزز بالكاميرا">
+        📷
+      </button>
+      <button class="btn-icon" id="btnConfig" title="إعداد الجلسة واسم الهاتف">
+        ⚙️
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Body -->
+  <main>
+    <!-- Room and Live Sync Bar -->
+    <div class="room-bar">
+      <div class="room-info">
+        <div class="status-dot" id="statusDot"></div>
+        <div>
+          <div style="font-size: 11px; color: var(--text-muted);" id="peerStatusLabel">في انتظار اتصال الأجهزة الأخرى</div>
+          <div class="room-code-tag" id="roomCodeDisplay">الغرفة: 7842</div>
+        </div>
+      </div>
+      <button class="btn-sm" id="btnChangeRoom">إدارة الغرفة</button>
+    </div>
+
+    <!-- Target Device Switcher Bar -->
+    <div class="target-bar" id="targetBar">
+      <div>
+        <div class="target-title">الهدف الموجه نحوه حالياً:</div>
+        <div class="target-name" id="targetNameDisplay">في انتظار اتصال جهاز...</div>
+      </div>
+      <button class="btn-sm" id="btnSwitchTarget">تبديل الهدف 🔄</button>
+    </div>
+
+    <!-- Alignment Instruction Banner -->
+    <div class="guidance-box" id="guidanceBox">
+      <div class="guidance-icon" id="guidanceIcon">🧭</div>
+      <div class="guidance-text">
+        <h2 id="guidanceTitle">جاري التقاط إشارة الـ GPS والبوصلة...</h2>
+        <p id="guidanceSub">قف في مكان مكشوف وحرك الهاتف لمعايرة البوصلة</p>
+      </div>
+    </div>
+
+    <!-- Compass Dial Container -->
+    <div class="compass-wrapper">
+      <canvas id="compassCanvas" width="340" height="340"></canvas>
+      <div class="compass-center-hud" id="centerHud">
+        <div class="hud-heading" id="hudHeadingVal">0°</div>
+        <div class="hud-sub" id="hudHeadingSub">الشمال</div>
+      </div>
+    </div>
+
+    <!-- Vertical Tilt / Spirit Level -->
+    <div class="level-card">
+      <div class="level-header">
+        <span>ميزان الميل الرأسي للأنتينا (Tilt)</span>
+        <span id="targetTiltLabel" style="color: var(--cyan);">المطلوب: +0.0°</span>
+      </div>
+      <div class="level-tube">
+        <div class="level-center-mark"></div>
+        <div class="level-bubble" id="levelBubble">0°</div>
+      </div>
+      <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px; text-align: center;" id="tiltInstruction">
+        ارفع أو اخفض رأس الأنتينا حتى تستقر الفقاعة في المنتصف
+      </div>
+    </div>
+
+    <!-- Geodesic Metrics Grid -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">المسافة بين القطعتين</div>
+        <div class="metric-value" id="valDistance">0.0 م</div>
+        <div class="metric-sub" id="subDistance">خط نظر مباشر</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">زاوية السمت (Azimuth)</div>
+        <div class="metric-value" id="valAzimuth">0.0°</div>
+        <div class="metric-sub" id="subAzimuth">درجة التوجيه المطلوبة</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">نصف قطر فرينل (Fresnel)</div>
+        <div class="metric-value" id="valFresnel">0.0 م</div>
+        <div class="metric-sub">نطاق خلو المسار (5.8GHz)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">دقة الـ GPS لديك</div>
+        <div class="metric-value" id="valAccuracy">± 0.0 م</div>
+        <div class="metric-sub" id="valAltitude">الارتفاع: 0 م</div>
+      </div>
+    </div>
+
+    <!-- Antenna Preset Selector -->
+    <div class="antenna-bar">
+      <span style="font-size: 13px; font-weight: 600;">موديل الهوائي:</span>
+      <select class="antenna-select" id="antennaSelect">
+        <option value="45" selected>NanoStation Loco 5AC (45°)</option>
+        <option value="45">NanoStation 5AC / M5 (45°)</option>
+        <option value="10">LiteBeam 5AC Gen2 (10°)</option>
+        <option value="8">PowerBeam 5AC 500/620 (8°)</option>
+        <option value="7">MikroTik LHG 5 / XL (7°)</option>
+        <option value="23">MikroTik SXTsq 5 ac (23°)</option>
+      </select>
+    </div>
+  </main>
+
+  <!-- AR Camera View Overlay -->
+  <div class="ar-overlay" id="arOverlay">
+    <video id="arVideo" autoplay playsinline muted></video>
+    <div class="ar-hud-elements">
+      <div class="ar-reticle"></div>
+      <div class="ar-target-marker" id="arTargetMarker">
+        <div class="ar-target-icon">📡</div>
+        <div class="ar-target-label" id="arTargetLabel">الطرف المقابل</div>
+      </div>
+    </div>
+    <button class="ar-close-btn" id="btnCloseAr">إغلاق الكاميرا ✕</button>
+  </div>
+
+  <!-- Connected Peers List Modal -->
+  <div class="modal-backdrop" id="peersModal">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>الأجهزة المتصلة بالغرفة</h3>
+        <span class="room-code-tag" id="peersModalRoomTag">الغرفة: 7842</span>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted);">
+        انقر على أي هاتف لتوجيه البوصلة نحوه مباشرة:
+      </div>
+      <div id="peersListContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto;">
+        <!-- Filled dynamically -->
+      </div>
+      <button class="btn-primary" id="btnClosePeersModal">إغلاق</button>
+    </div>
+  </div>
+
+  <!-- Settings / Room Modal -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal-card">
+      <h3>إعدادات الرابط والمزامنة</h3>
+      <div>
+        <label style="font-size: 12px; color: var(--text-muted);">اسم هاتفك (يظهر للفنيين الآخرين):</label>
+        <input type="text" class="input-field" id="myDeviceNameInput" value="محطة رئيسية" style="margin-top: 4px;">
+      </div>
+
+      <div>
+        <label style="font-size: 12px; color: var(--text-muted);">كود الغرفة للمزامنة اللحظية مع باقي الأجهزة:</label>
+        <input type="text" class="input-field" id="roomCodeInput" value="7842" maxlength="6" style="margin-top: 4px; text-align: center; font-size: 18px; font-weight: bold; letter-spacing: 2px;">
+      </div>
+
+      <div style="border-top: 1px solid var(--panel-border); padding-top: 10px;">
+        <label style="font-size: 12px; color: var(--text-muted);">أو إدخال إحداثيات موقع بعيد يدوياً (أوفلاين):</label>
+        <div style="display: flex; gap: 8px; margin-top: 6px;">
+          <input type="number" step="any" class="input-field" id="manualLat" placeholder="خط العرض Lat">
+          <input type="number" step="any" class="input-field" id="manualLon" placeholder="خط الطول Lon">
+        </div>
+        <input type="number" step="any" class="input-field" id="manualAlt" placeholder="الارتفاع بالمتر (اختياري)" style="margin-top: 8px;">
+      </div>
+
+      <button class="btn-primary" id="btnSaveConfig">حفظ وبدء التوجيه</button>
+      <button class="btn-secondary" id="btnSimulatePeer">+ إضافة أجهزة محاكاة تجريبية (لاختبار تعدد الهواتف)</button>
+      <button class="btn-secondary" id="btnCloseModal">إلغاء</button>
+    </div>
+  </div>
+
+  <!-- JavaScript Logic Engine -->
+  <script>
+    // App State
+    const state = {
+      roomCode: '7842',
+      deviceId: 'dev_' + Math.floor(Math.random() * 89999 + 10000),
+      myDeviceName: 'محطة فنية ' + Math.floor(Math.random() * 90 + 10),
+      antennaBeamwidth: 45.0,
+      audioEnabled: true,
+      
+      // Local phone sensors
+      localLat: null,
+      localLon: null,
+      localAlt: 0,
+      localAcc: 0,
+      currentHeading: 0,
+      currentPitch: 0,
+      
+      // Multi-Peer Management
+      peers: {}, // { deviceId: { name, lat, lon, alt, acc, time } }
+      selectedPeerId: null,
+      
+      // Active target metrics
+      distanceMeters: 0,
+      targetBearing: 0,
+      targetElevation: 0,
+      horizontalError: 0,
+      verticalError: 0,
+      isLocked: false,
+      isApproaching: false
+    };
+
+    // DOM Elements
+    const canvas = document.getElementById('compassCanvas');
+    const ctx = canvas.getContext('2d');
+    const hudHeadingVal = document.getElementById('hudHeadingVal');
+    const hudHeadingSub = document.getElementById('hudHeadingSub');
+    const centerHud = document.getElementById('centerHud');
+    const guidanceBox = document.getElementById('guidanceBox');
+    const guidanceIcon = document.getElementById('guidanceIcon');
+    const guidanceTitle = document.getElementById('guidanceTitle');
+    const guidanceSub = document.getElementById('guidanceSub');
+    const statusDot = document.getElementById('statusDot');
+    const peerStatusLabel = document.getElementById('peerStatusLabel');
+    const roomCodeDisplay = document.getElementById('roomCodeDisplay');
+    const targetNameDisplay = document.getElementById('targetNameDisplay');
+    const valDistance = document.getElementById('valDistance');
+    const valAzimuth = document.getElementById('valAzimuth');
+    const subAzimuth = document.getElementById('subAzimuth');
+    const valFresnel = document.getElementById('valFresnel');
+    const valAccuracy = document.getElementById('valAccuracy');
+    const valAltitude = document.getElementById('valAltitude');
+    const levelBubble = document.getElementById('levelBubble');
+    const targetTiltLabel = document.getElementById('targetTiltLabel');
+    const tiltInstruction = document.getElementById('tiltInstruction');
+    const antennaSelect = document.getElementById('antennaSelect');
+    const btnAudio = document.getElementById('btnAudio');
+    const btnArCam = document.getElementById('btnArCam');
+    const btnConfig = document.getElementById('btnConfig');
+    const btnPeersList = document.getElementById('btnPeersList');
+    const peersBadge = document.getElementById('peersBadge');
+    const btnSwitchTarget = document.getElementById('btnSwitchTarget');
+    const arOverlay = document.getElementById('arOverlay');
+    const arVideo = document.getElementById('arVideo');
+    const btnCloseAr = document.getElementById('btnCloseAr');
+    const arTargetMarker = document.getElementById('arTargetMarker');
+    const arTargetLabel = document.getElementById('arTargetLabel');
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const peersModal = document.getElementById('peersModal');
+    const peersListContainer = document.getElementById('peersListContainer');
+    const btnClosePeersModal = document.getElementById('btnClosePeersModal');
+    const btnChangeRoom = document.getElementById('btnChangeRoom');
+    const btnCloseModal = document.getElementById('btnCloseModal');
+    const btnSaveConfig = document.getElementById('btnSaveConfig');
+    const btnSimulatePeer = document.getElementById('btnSimulatePeer');
+    const roomCodeInput = document.getElementById('roomCodeInput');
+    const myDeviceNameInput = document.getElementById('myDeviceNameInput');
+    const manualLat = document.getElementById('manualLat');
+    const manualLon = document.getElementById('manualLon');
+    const manualAlt = document.getElementById('manualAlt');
+
+    myDeviceNameInput.value = state.myDeviceName;
+
+    // Web Audio Synthesizer for Radar Beeps
+    let audioCtx = null;
+    let lastBeepTime = 0;
+
+    function playBeep(freq = 800, duration = 0.08) {
+      if (!state.audioEnabled) return;
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    // Geodesic Math Formulas
+    const EARTH_RADIUS = 6371000.0;
+    const toRad = deg => deg * Math.PI / 180.0;
+    const toDeg = rad => rad * 180.0 / Math.PI;
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return EARTH_RADIUS * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function calculateBearing(lat1, lon1, lat2, lon2) {
+      const phi1 = toRad(lat1);
+      const phi2 = toRad(lat2);
+      const dLon = toRad(lon2 - lon1);
+      const y = Math.sin(dLon) * Math.cos(phi2);
+      const x = Math.cos(phi1) * Math.sin(phi2) -
+                Math.sin(phi1) * Math.cos(phi2) * Math.cos(dLon);
+      return (toDeg(Math.atan2(y, x)) + 360.0) % 360.0;
+    }
+
+    function calculateHeadingDiff(heading, target) {
+      let diff = (target - heading) % 360.0;
+      if (diff > 180.0) diff -= 360.0;
+      if (diff < -180.0) diff += 360.0;
+      return diff;
+    }
+
+    function calculateElevation(alt1, alt2, dist) {
+      if (dist <= 0) return 0;
+      const drop = (dist * dist) / (2 * EARTH_RADIUS);
+      const deltaH = (alt2 - drop) - alt1;
+      return toDeg(Math.atan2(deltaH, dist));
+    }
+
+    function calculateFresnel(distMeters, freqGhz = 5.8) {
+      if (distMeters <= 0) return 0;
+      return 8.656 * Math.sqrt((distMeters / 1000.0) / freqGhz);
+    }
+
+    function getCardinal(deg) {
+      const cards = ['شمال N', 'ش.ش.ق NNE', 'شمال شرق NE', 'ش.ش.ق ENE', 'شرق E', 'ج.ش.ق ESE', 'جنوب شرق SE', 'ج.ج.ش SSE', 'جنوب S', 'ج.ج.غ SSW', 'جنوب غرب SW', 'غ.ج.غ WSW', 'غرب W', 'غ.ش.غ WNW', 'شمال غرب NW', 'ش.ش.غ NNW'];
+      const idx = Math.floor(((deg + 11.25) % 360.0) / 22.5);
+      return cards[idx % 16];
+    }
+
+    // Active Target Management
+    function getActiveTarget() {
+      if (!state.selectedPeerId || !state.peers[state.selectedPeerId]) {
+        const peerKeys = Object.keys(state.peers);
+        if (peerKeys.length > 0) {
+          state.selectedPeerId = peerKeys[0];
+        } else {
+          return null;
+        }
+      }
+      return state.peers[state.selectedPeerId];
+    }
+
+    // Recompute Metrics
+    function updateCalculations() {
+      const target = getActiveTarget();
+      const peerCount = Object.keys(state.peers).length;
+      peersBadge.textContent = peerCount;
+
+      if (peerCount > 0) {
+        statusDot.className = 'status-dot online';
+        peerStatusLabel.textContent = `${peerCount} أجهزة متصلة في الغرفة ✅`;
+      } else {
+        statusDot.className = 'status-dot';
+        peerStatusLabel.textContent = 'في انتظار اتصال الأجهزة الأخرى';
+      }
+
+      if (target && state.localLat !== null) {
+        targetNameDisplay.textContent = target.name || 'جهاز متصل';
+
+        state.distanceMeters = calculateDistance(state.localLat, state.localLon, target.lat, target.lon);
+        state.targetBearing = calculateBearing(state.localLat, state.localLon, target.lat, target.lon);
+        state.targetElevation = calculateElevation(state.localAlt, target.alt, state.distanceMeters);
+        state.horizontalError = calculateHeadingDiff(state.currentHeading, state.targetBearing);
+        state.verticalError = state.targetElevation - state.currentPitch;
+
+        const absErr = Math.abs(state.horizontalError);
+        const halfBeam = state.antennaBeamwidth / 2.0;
+
+        state.isLocked = absErr <= Math.max(1.8, halfBeam * 0.35);
+        state.isApproaching = !state.isLocked && absErr <= halfBeam;
+
+        // UI Updates
+        valDistance.textContent = state.distanceMeters < 1000 
+          ? `${state.distanceMeters.toFixed(1)} م` 
+          : `${(state.distanceMeters / 1000).toFixed(2)} كم`;
+
+        valAzimuth.textContent = `${state.targetBearing.toFixed(1)}°`;
+        subAzimuth.textContent = getCardinal(state.targetBearing);
+        valFresnel.textContent = `${calculateFresnel(state.distanceMeters).toFixed(1)} م`;
+        targetTiltLabel.textContent = `المطلوب: ${state.targetElevation >= 0 ? '+' : ''}${state.targetElevation.toFixed(1)}°`;
+
+        // Guidance banner
+        if (state.isLocked) {
+          guidanceBox.className = 'guidance-box locked';
+          centerHud.className = 'compass-center-hud locked';
+          guidanceIcon.textContent = '🎯';
+          guidanceTitle.textContent = `أنت في مواجهة (${target.name}) تماماً! ثبت القطعة ✅`;
+          guidanceSub.textContent = `انحراف ممتاز: ${absErr.toFixed(1)}° (ضمن حزمة الـ ${state.antennaBeamwidth}°)`;
+          
+          const now = Date.now();
+          if (now - lastBeepTime > 150) {
+            playBeep(1200, 0.05);
+            if (navigator.vibrate) navigator.vibrate(50);
+            lastBeepTime = now;
+          }
+        } else if (state.isApproaching) {
+          guidanceBox.className = 'guidance-box approaching';
+          centerHud.className = 'compass-center-hud';
+          guidanceIcon.textContent = '⚡';
+          guidanceTitle.textContent = state.horizontalError > 0 
+            ? `اقتربت! لف يميناً ${absErr.toFixed(1)}° ➡️` 
+            : `⬅️ اقتربت! لف يساراً ${absErr.toFixed(1)}°`;
+          guidanceSub.textContent = `المسافة: ${valDistance.textContent} نحو ${target.name}`;
+
+          const now = Date.now();
+          if (now - lastBeepTime > 500) {
+            playBeep(750, 0.08);
+            if (navigator.vibrate) navigator.vibrate(30);
+            lastBeepTime = now;
+          }
+        } else {
+          guidanceBox.className = 'guidance-box';
+          centerHud.className = 'compass-center-hud';
+          guidanceIcon.textContent = state.horizontalError > 0 ? '➡️' : '⬅️';
+          guidanceTitle.textContent = state.horizontalError > 0 
+            ? `انعطف يميناً بمقدار ${absErr.toFixed(0)}°` 
+            : `انعطف يساراً بمقدار ${absErr.toFixed(0)}°`;
+          guidanceSub.textContent = `نحو: ${target.name} | السمت: ${state.targetBearing.toFixed(1)}°`;
+        }
+
+        // Tilt Spirit Level
+        const tiltErr = state.verticalError;
+        const clampedOffset = Math.max(-15, Math.min(15, tiltErr)) / 15;
+        const tubeWidth = levelBubble.parentElement.clientWidth;
+        const maxTravel = (tubeWidth - 44) / 2;
+        const bubbleX = maxTravel * clampedOffset;
+        levelBubble.style.transform = `translateX(${bubbleX}px)`;
+        levelBubble.textContent = `${state.currentPitch >= 0 ? '+' : ''}${Math.round(state.currentPitch)}°`;
+
+        const isTiltOk = Math.abs(tiltErr) <= (state.antennaBeamwidth / 2);
+        levelBubble.className = isTiltOk ? 'level-bubble aligned' : 'level-bubble';
+        tiltInstruction.textContent = isTiltOk
+          ? 'زاوية الميل الرأسي مضبوطة تماماً ✅'
+          : tiltErr > 0 
+            ? `ارفع وجه الأنتينا للأعلى بمقدار ${tiltErr.toFixed(1)}°` 
+            : `اخفض وجه الأنتينا للأسفل بمقدار ${Math.abs(tiltErr).toFixed(1)}°`;
+
+        if (arOverlay.classList.contains('active')) {
+          updateArOverlay(target);
+        }
+      } else {
+        targetNameDisplay.textContent = 'في انتظار اتصال الأجهزة الأخرى...';
+      }
+    }
+
+    // Canvas Compass Rendering (Shows main target arrow + secondary dots for other peers)
+    function drawCompass() {
+      const size = canvas.width;
+      const center = size / 2;
+      const radius = size / 2 - 12;
+
+      ctx.clearRect(0, 0, size, size);
+
+      // Rotate canvas for compass dial
+      ctx.save();
+      ctx.translate(center, center);
+      ctx.rotate(-toRad(state.currentHeading));
+
+      // Outer Ring
+      ctx.beginPath();
+      ctx.arc(0, 0, radius, 0, 2 * Math.PI);
+      ctx.strokeStyle = 'rgba(0, 229, 255, 0.3)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Dial Ticks
+      for (let i = 0; i < 360; i += 5) {
+        const rad = toRad(i);
+        const isMajor = i % 30 === 0;
+        const isQuarter = i % 90 === 0;
+        const len = isQuarter ? 14 : (isMajor ? 10 : 5);
+
+        const x1 = (radius - 2) * Math.sin(rad);
+        const y1 = -(radius - 2) * Math.cos(rad);
+        const x2 = (radius - 2 - len) * Math.sin(rad);
+        const y2 = -(radius - 2 - len) * Math.cos(rad);
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = isQuarter ? '#00e5ff' : (isMajor ? '#fff' : 'rgba(255, 255, 255, 0.3)');
+        ctx.lineWidth = isQuarter ? 2.5 : (isMajor ? 1.5 : 1);
+        ctx.stroke();
+      }
+
+      // Cardinal Letters
+      ctx.font = 'bold 16px Cairo';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      ctx.fillStyle = '#ef4444';
+      ctx.fillText('N', 0, -radius + 24);
+      ctx.fillStyle = '#fff';
+      ctx.fillText('E', radius - 24, 0);
+      ctx.fillStyle = '#fff';
+      ctx.fillText('S', 0, radius - 24);
+      ctx.fillStyle = '#fff';
+      ctx.fillText('W', -radius + 24, 0);
+
+      ctx.restore();
+
+      // Draw secondary peers as radar blips
+      if (state.localLat !== null) {
+        Object.entries(state.peers).forEach(([id, peer]) => {
+          if (id !== state.selectedPeerId) {
+            const b = calculateBearing(state.localLat, state.localLon, peer.lat, peer.lon);
+            const relRad = toRad(b - state.currentHeading);
+            ctx.save();
+            ctx.translate(center, center);
+            ctx.rotate(relRad);
+            ctx.beginPath();
+            ctx.arc(0, -radius + 18, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = 'rgba(0, 229, 255, 0.6)';
+            ctx.fill();
+            ctx.restore();
+          }
+        });
+      }
+
+      // Draw Selected Target Pointer & Beamwidth Arc
+      const target = getActiveTarget();
+      if (target && state.localLat !== null) {
+        ctx.save();
+        ctx.translate(center, center);
+        const targetRelRad = toRad(state.targetBearing - state.currentHeading);
+        ctx.rotate(targetRelRad);
+
+        const color = state.isLocked ? '#10b981' : '#00e5ff';
+
+        // Beamwidth fan
+        const halfBeamRad = toRad(state.antennaBeamwidth / 2.0);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, radius - 4, -Math.PI / 2 - halfBeamRad, -Math.PI / 2 + halfBeamRad);
+        ctx.closePath();
+        ctx.fillStyle = state.isLocked ? 'rgba(16, 185, 129, 0.3)' : 'rgba(0, 229, 255, 0.18)';
+        ctx.fill();
+
+        // Glowing Target Pointer Arrow
+        ctx.beginPath();
+        ctx.moveTo(0, -radius + 4);
+        ctx.lineTo(-14, -radius + 26);
+        ctx.lineTo(0, -radius + 20);
+        ctx.lineTo(14, -radius + 26);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = state.isLocked ? 15 : 8;
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      // Static Forward Phone Pointer (Yellow/Green tip at top)
+      ctx.save();
+      ctx.fillStyle = state.isLocked ? '#10b981' : '#f59e0b';
+      ctx.shadowColor = ctx.fillStyle;
+      ctx.shadowBlur = 10;
+      ctx.fillRect(center - 2, 2, 4, 20);
+      ctx.restore();
+
+      hudHeadingVal.textContent = `${Math.round(state.currentHeading)}°`;
+      hudHeadingSub.textContent = getCardinal(state.currentHeading);
+    }
+
+    // AR Camera Overlay Projection
+    function updateArOverlay(target) {
+      const fovH = 60.0;
+      const fovV = 45.0;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      const screenX = (w / 2) + (state.horizontalError / (fovH / 2)) * (w / 2);
+      const screenY = (h / 2) - (state.verticalError / (fovV / 2)) * (h / 2);
+
+      arTargetMarker.style.left = `${screenX}px`;
+      arTargetMarker.style.top = `${screenY}px`;
+      arTargetLabel.textContent = `${target.name} (${valDistance.textContent})`;
+      arTargetMarker.className = state.isLocked ? 'ar-target-marker locked' : 'ar-target-marker';
+    }
+
+    // GPS & Compass Sensors Initialization
+    function initSensors() {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.watchPosition(
+          pos => {
+            state.localLat = pos.coords.latitude;
+            state.localLon = pos.coords.longitude;
+            state.localAlt = pos.coords.altitude || 0;
+            state.localAcc = pos.coords.accuracy || 0;
+
+            valAccuracy.textContent = `± ${state.localAcc.toFixed(1)} م`;
+            valAltitude.textContent = `الارتفاع: ${state.localAlt.toFixed(0)} م`;
+
+            publishCoords();
+            updateCalculations();
+            drawCompass();
+          },
+          err => {
+            console.warn('GPS error:', err);
+            guidanceTitle.textContent = 'تعذر تشغيل الـ GPS، يرجى تفعيل الموقع';
+          },
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+        );
+      }
+
+      function handleOrientation(e) {
+        let heading = 0;
+        if (e.webkitCompassHeading !== undefined) {
+          heading = e.webkitCompassHeading;
+        } else if (e.alpha !== null) {
+          heading = 360 - e.alpha;
+        }
+
+        state.currentHeading = (heading + 360) % 360;
+        state.currentPitch = e.beta || 0;
+
+        updateCalculations();
+        drawCompass();
+      }
+
+      if (window.DeviceOrientationEvent) {
+        window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+        window.addEventListener('deviceorientation', handleOrientation, true);
+      }
+    }
+
+    // Zero-Config Multi-Device MQTT Room Sync
+    let mqttClient = null;
+
+    function initMqtt() {
+      try {
+        const clientId = 'web_' + state.deviceId;
+        mqttClient = new Paho.MQTT.Client('broker.emqx.io', 8084, '/mqtt', clientId);
+
+        mqttClient.onConnectionLost = response => {
+          statusDot.className = 'status-dot';
+          peerStatusLabel.textContent = 'انقطع الاتصال.. جاري إعادة الربط';
+          setTimeout(connectMqtt, 3000);
+        };
+
+        mqttClient.onMessageArrived = message => {
+          try {
+            const data = JSON.parse(message.payloadString);
+            const peerId = data.deviceId || data.senderId;
+
+            // If message is from another phone:
+            if (peerId && peerId !== state.deviceId) {
+              state.peers[peerId] = {
+                name: data.name || 'هاتف فني',
+                lat: data.lat,
+                lon: data.lon,
+                alt: data.alt || 0,
+                acc: data.acc || 0,
+                time: Date.now()
+              };
+
+              // Auto-select first peer if none selected
+              if (!state.selectedPeerId || !state.peers[state.selectedPeerId]) {
+                state.selectedPeerId = peerId;
+              }
+
+              updateCalculations();
+              drawCompass();
+              renderPeersList();
+            }
+          } catch (e) {}
+        };
+
+        connectMqtt();
+      } catch (e) {
+        console.warn('MQTT init failed:', e);
+      }
+    }
+
+    function connectMqtt() {
+      if (!mqttClient) return;
+      mqttClient.connect({
+        useSSL: true,
+        timeout: 10,
+        keepAliveInterval: 30,
+        cleanSession: true,
+        onSuccess: () => {
+          const topic = `tawjeeh/room/${state.roomCode}/coords`;
+          mqttClient.subscribe(topic);
+          statusDot.className = 'status-dot';
+          peerStatusLabel.textContent = 'الغرفة جاهزة، في انتظار انضمام الهواتف';
+          publishCoords();
+        },
+        onFailure: () => {
+          statusDot.className = 'status-dot';
+          peerStatusLabel.textContent = 'تعذر الاتصال بسحابة المزامنة';
+          setTimeout(connectMqtt, 5000);
+        }
+      });
+    }
+
+    function publishCoords() {
+      if (mqttClient && mqttClient.isConnected() && state.localLat !== null) {
+        const payload = JSON.stringify({
+          deviceId: state.deviceId,
+          name: state.myDeviceName,
+          lat: state.localLat,
+          lon: state.localLon,
+          alt: state.localAlt,
+          acc: state.localAcc,
+          time: Date.now()
+        });
+        const message = new Paho.MQTT.Message(payload);
+        message.destinationName = `tawjeeh/room/${state.roomCode}/coords`;
+        mqttClient.send(message);
+      }
+    }
+
+    // Render Peers Modal List
+    function renderPeersList() {
+      peersListContainer.innerHTML = '';
+      const peerKeys = Object.keys(state.peers);
+
+      if (peerKeys.length === 0) {
+        peersListContainer.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 16px;">لا توجد هواتف أخرى متصلة حالياً في هذه الغرفة.</div>';
+        return;
+      }
+
+      peerKeys.forEach(id => {
+        const peer = state.peers[id];
+        const isSelected = id === state.selectedPeerId;
+        const item = document.createElement('div');
+        item.className = isSelected ? 'peer-item selected' : 'peer-item';
+
+        let distStr = '---';
+        let bearingStr = '---';
+        if (state.localLat !== null) {
+          const d = calculateDistance(state.localLat, state.localLon, peer.lat, peer.lon);
+          const b = calculateBearing(state.localLat, state.localLon, peer.lat, peer.lon);
+          distStr = d < 1000 ? `${d.toFixed(1)} م` : `${(d / 1000).toFixed(2)} كم`;
+          bearingStr = `${b.toFixed(0)}° (${getCardinal(b)})`;
+        }
+
+        item.innerHTML = `
+          <div>
+            <div style="font-weight: 700; color: ${isSelected ? 'var(--green)' : '#fff'}; font-size: 14px;">
+              ${peer.name} ${isSelected ? '✅ (المحدد)' : ''}
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+              المسافة: ${distStr} | زاوية التوجيه: ${bearingStr}
+            </div>
+          </div>
+          <button class="btn-sm" style="${isSelected ? 'background: var(--green); color: #000;' : ''}">
+            ${isSelected ? 'نشط' : 'توجيه نحوه'}
+          </button>
+        `;
+
+        item.onclick = () => {
+          state.selectedPeerId = id;
+          updateCalculations();
+          drawCompass();
+          renderPeersList();
+          peersModal.classList.remove('open');
+        };
+
+        peersListContainer.appendChild(item);
+      });
+    }
+
+    // UI Event Handlers
+    antennaSelect.addEventListener('change', e => {
+      state.antennaBeamwidth = parseFloat(e.target.value);
+      updateCalculations();
+      drawCompass();
+    });
+
+    btnAudio.addEventListener('click', () => {
+      state.audioEnabled = !state.audioEnabled;
+      btnAudio.textContent = state.audioEnabled ? '🔊' : '🔇';
+      btnAudio.className = state.audioEnabled ? 'btn-icon active' : 'btn-icon';
+    });
+
+    btnPeersList.addEventListener('click', () => {
+      renderPeersList();
+      peersModal.classList.add('open');
+    });
+
+    btnSwitchTarget.addEventListener('click', () => {
+      renderPeersList();
+      peersModal.classList.add('open');
+    });
+
+    btnClosePeersModal.addEventListener('click', () => {
+      peersModal.classList.remove('open');
+    });
+
+    // AR Camera Mode
+    btnArCam.addEventListener('click', async () => {
+      const target = getActiveTarget();
+      if (!target) {
+        alert('يرجى انتظار اتصال هاتف آخر أو تحديد هدف أولاً!');
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' },
+          audio: false
+        });
+        arVideo.srcObject = stream;
+        arOverlay.classList.add('active');
+      } catch (err) {
+        alert('تعذر فتح الكاميرا: ' + err.message);
+      }
+    });
+
+    btnCloseAr.addEventListener('click', () => {
+      if (arVideo.srcObject) {
+        arVideo.srcObject.getTracks().forEach(track => track.stop());
+        arVideo.srcObject = null;
+      }
+      arOverlay.classList.remove('active');
+    });
+
+    // Modal Events
+    btnConfig.addEventListener('click', () => modalBackdrop.classList.add('open'));
+    btnChangeRoom.addEventListener('click', () => modalBackdrop.classList.add('open'));
+    btnCloseModal.addEventListener('click', () => modalBackdrop.classList.remove('open'));
+
+    btnSaveConfig.addEventListener('click', () => {
+      const newName = myDeviceNameInput.value.trim();
+      if (newName) {
+        state.myDeviceName = newName;
+      }
+
+      const newRoom = roomCodeInput.value.trim().toUpperCase();
+      if (newRoom && newRoom !== state.roomCode) {
+        state.roomCode = newRoom;
+        roomCodeDisplay.textContent = `الغرفة: ${state.roomCode}`;
+        state.peers = {};
+        state.selectedPeerId = null;
+        if (mqttClient) {
+          mqttClient.disconnect();
+          connectMqtt();
+        }
+      }
+
+      const lat = parseFloat(manualLat.value);
+      const lon = parseFloat(manualLon.value);
+      if (!isNaN(lat) && !isNaN(lon)) {
+        const manualId = 'manual_' + Date.now();
+        state.peers[manualId] = {
+          name: 'إدخال يدوي',
+          lat: lat,
+          lon: lon,
+          alt: parseFloat(manualAlt.value) || 0,
+          acc: 0,
+          time: Date.now()
+        };
+        state.selectedPeerId = manualId;
+        updateCalculations();
+        drawCompass();
+      }
+
+      publishCoords();
+      modalBackdrop.classList.remove('open');
+    });
+
+    // Test Multi-Peer Simulator
+    btnSimulatePeer.addEventListener('click', () => {
+      if (state.localLat === null) {
+        state.localLat = 30.0444;
+        state.localLon = 31.2357;
+        state.localAlt = 25;
+        state.localAcc = 2.5;
+      }
+
+      // Add 2 simulated stations
+      const id1 = 'sim_station_1';
+      state.peers[id1] = {
+        name: 'برج محطة المعادي (NanoStation)',
+        lat: state.localLat - 0.0075,
+        lon: state.localLon + 0.0085,
+        alt: state.localAlt + 12,
+        acc: 2.0,
+        time: Date.now()
+      };
+
+      const id2 = 'sim_station_2';
+      state.peers[id2] = {
+        name: 'عميل التجمع (LiteBeam)',
+        lat: state.localLat + 0.0120,
+        lon: state.localLon - 0.0060,
+        alt: state.localAlt + 20,
+        acc: 3.0,
+        time: Date.now()
+      };
+
+      state.selectedPeerId = id1;
+      updateCalculations();
+      drawCompass();
+      renderPeersList();
+      modalBackdrop.classList.remove('open');
+      alert('تمت إضافة هاتفين للمحاكاة! اضغط زر 📱 في الأعلى للتبديل بينهما.');
+    });
+
+    // Initial Launch
+    initSensors();
+    initMqtt();
+    drawCompass();
+  </script>
+</body>
+</html>
