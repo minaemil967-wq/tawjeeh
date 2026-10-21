@@ -26,7 +26,6 @@ dependencies:
   
   # Camera & AR
   camera: any
-  permission_handler: any
   
   # Local Storage & Utilities
   shared_preferences: any
