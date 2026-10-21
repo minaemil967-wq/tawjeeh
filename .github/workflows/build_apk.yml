@@ -35,23 +35,16 @@ jobs:
       - name: Build APK (Release)
         run: flutter build apk --release --android-skip-build-dependency-validation
 
-      - name: Prepare APK Names
-        run: |
-          mkdir -p dist
-          cp build/app/outputs/flutter-apk/app-release.apk dist/Tawjeeh-v1.0.apk
-          cp build/app/outputs/flutter-apk/app-release.apk dist/app-release.apk
-
       - name: Upload APK to Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: tawjeeh-release-apk
-          path: dist/
+          path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         continue-on-error: true
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
           tag_name: v1.0.0
           name: "Tawjeeh Pro v1.0.0 (Release APK)"
@@ -66,7 +59,7 @@ jobs:
             - وضع الأماكن النائية بدون إنترنت (Offline Mode).
             
             **طريقة التثبيت:**
-            قم بتنزيل ملف `Tawjeeh-v1.0.apk` وتثبيته مباشرة على هواتف الأندرويد.
-          files: dist/Tawjeeh-v1.0.apk
+            قم بتنزيل ملف `app-release.apk` وتثبيته مباشرة على هواتف الأندرويد.
+          files: build/app/outputs/flutter-apk/app-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

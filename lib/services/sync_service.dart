@@ -94,7 +94,7 @@ class SyncService {
 
         _client!.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
           final recMess = c[0].payload as MqttPublishMessage;
-          final pt = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+          final pt = utf8.decode(recMess.payload.message);
 
           try {
             final data = jsonDecode(pt) as Map<String, dynamic>;

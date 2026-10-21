@@ -34,11 +34,10 @@ class TawjeehAntennaApp extends StatelessWidget {
         useMaterial3: true,
         brightness: Brightness.dark,
         scaffoldBackgroundColor: const Color(0xFF0F172A),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF00E5FF),
-          secondary: Color(0xFF10B981),
-          surface: Color(0xFF1E293B),
-          background: Color(0xFF0F172A),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF00E5FF),
+          brightness: Brightness.dark,
+          surface: const Color(0xFF1E293B),
         ),
         fontFamily: 'Cairo',
       ),
