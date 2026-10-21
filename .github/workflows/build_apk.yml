@@ -35,18 +35,22 @@ jobs:
       - name: Build APK (Release)
         run: flutter build apk --release --android-skip-build-dependency-validation
 
-      - name: Rename APK for Clarity
-        run: cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/Tawjeeh-v1.0.apk
+      - name: Prepare APK Names
+        run: |
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk dist/Tawjeeh-v1.0.apk
+          cp build/app/outputs/flutter-apk/app-release.apk dist/app-release.apk
 
       - name: Upload APK to Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: tawjeeh-release-apk
-          path: build/app/outputs/flutter-apk/Tawjeeh-v1.0.apk
+          path: dist/
           retention-days: 30
 
-      - name: Create / Update GitHub Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
+        continue-on-error: true
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
           tag_name: v1.0.0
@@ -62,7 +66,7 @@ jobs:
             - وضع الأماكن النائية بدون إنترنت (Offline Mode).
             
             **طريقة التثبيت:**
-            قم بتحميل ملف `Tawjeeh-v1.0.apk` المرفق وتثبيته مباشرة على هواتف الأندرويد.
-          files: build/app/outputs/flutter-apk/Tawjeeh-v1.0.apk
+            قم بتنزيل ملف `Tawjeeh-v1.0.apk` وتثبيته مباشرة على هواتف الأندرويد.
+          files: dist/Tawjeeh-v1.0.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
