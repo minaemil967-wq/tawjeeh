@@ -9,6 +9,7 @@ import '../services/sensor_service.dart';
 import '../widgets/compass_dial.dart';
 import '../widgets/spirit_level.dart';
 import 'ar_camera_screen.dart';
+import 'tools_screen.dart';
 
 /// الشاشة الميدانية الرئيسية مع دعم تعدد الأجهزة واختيار الهدف
 class CompassAlignmentScreen extends StatefulWidget {
@@ -352,6 +353,25 @@ class _CompassAlignmentScreenState extends State<CompassAlignmentScreen> {
               tooltip: 'قائمة الأجهزة المتصلة',
               onPressed: _showPeersPicker,
             ),
+          IconButton(
+            icon: const Icon(Icons.handyman_outlined, color: Colors.cyanAccent),
+            tooltip: 'حقيبة أدوات الفني 🧰',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ToolsScreen(
+                    initialDistanceMeters: link.distanceMeters,
+                    initialAzimuth: link.targetBearing,
+                    initialTilt: link.targetElevationAngle,
+                    localName: _localPoint.deviceName,
+                    remoteName: _remotePoint?.deviceName ?? 'الطرف المقابل',
+                    initialAntenna: _selectedAntenna,
+                  ),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: Icon(
               _soundAndHapticEnabled ? Icons.vibration : Icons.notifications_off_outlined,

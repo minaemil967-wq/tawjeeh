@@ -5,6 +5,7 @@ import '../services/sensor_service.dart';
 import '../services/sync_service.dart';
 import 'compass_alignment_screen.dart';
 import 'manual_input_screen.dart';
+import 'tools_screen.dart';
 
 /// الشاشة الترحيبية واختيار طريقة التوجيه
 class HomeScreen extends StatefulWidget {
@@ -200,6 +201,20 @@ class _HomeScreenState extends State<HomeScreen> {
             Text('توجيه برو | محاذاة هوائيات الشبكات', style: TextStyle(fontSize: 16)),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.handyman_outlined, color: Colors.cyanAccent),
+            tooltip: 'حقيبة أدوات الفني 🧰',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ToolsScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -255,6 +270,26 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => ManualInputScreen(localPoint: _localPoint!),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 14),
+
+            // خيار 4: حقيبة أدوات الفني الميدانية
+            _buildOptionCard(
+              title: 'حقيبة أدوات الفني الميدانية 🧰',
+              subtitle: 'حاسبة الإشارة المتوقعة (dBm)، ارتفاع الصاري وفرينل، فحص توازن القطبين، والطاقة الشمسية، وتقرير الاستلام',
+              icon: Icons.handyman,
+              color: Colors.purpleAccent,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ToolsScreen(
+                      initialDistanceMeters: 1500,
+                      localName: _myDeviceName,
+                    ),
                   ),
                 );
               },

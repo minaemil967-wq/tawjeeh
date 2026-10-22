@@ -632,6 +632,105 @@
       border-color: var(--green);
       background: rgba(16, 185, 129, 0.1);
     }
+
+    /* Toolkit Styles */
+    .toolkit-launch-btn {
+      background: linear-gradient(135deg, rgba(0, 229, 255, 0.12), rgba(2, 132, 199, 0.22));
+      border: 1px solid rgba(0, 229, 255, 0.4);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      color: #fff;
+      text-align: right;
+      transition: all 0.2s;
+    }
+
+    .toolkit-launch-btn:hover {
+      background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(2, 132, 199, 0.35));
+      box-shadow: 0 0 15px var(--cyan-glow);
+    }
+
+    .toolkit-launch-btn .icon {
+      font-size: 26px;
+    }
+
+    .toolkit-tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--panel-border);
+    }
+
+    .toolkit-tab {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .toolkit-tab.active {
+      background: var(--cyan);
+      color: #000;
+      border-color: var(--cyan);
+      box-shadow: 0 0 10px var(--cyan-glow);
+    }
+
+    .toolkit-pane {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .toolkit-pane.active {
+      display: flex;
+    }
+
+    .tool-result-box {
+      background: #0b1120;
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .tool-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .tool-badge.green {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--green);
+      border: 1px solid var(--green);
+    }
+
+    .tool-badge.amber {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--amber);
+      border: 1px solid var(--amber);
+    }
+
+    .tool-badge.red {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--red);
+      border: 1px solid var(--red);
+    }
   </style>
 </head>
 <body>
@@ -652,6 +751,10 @@
       <button class="btn-icon" id="btnPeersList" title="الأجهزة المتصلة">
         📱
         <span class="badge-counter" id="peersBadge">0</span>
+      </button>
+      <!-- Field Toolkit Button -->
+      <button class="btn-icon" id="btnToolkit" title="حقيبة أدوات الفني">
+        🧰
       </button>
       <button class="btn-icon active" id="btnAudio" title="صوت الرادار والتنبيه">
         🔊
@@ -757,6 +860,16 @@
         <option value="23">MikroTik SXTsq 5 ac (23°)</option>
       </select>
     </div>
+
+    <!-- Technician Toolkit Quick Launch Button -->
+    <div class="toolkit-launch-btn" id="btnOpenToolkitMain">
+      <span class="icon">🧰</span>
+      <div style="flex: 1;">
+        <div style="font-weight: 800; font-size: 14px; color: #fff;">حقيبة أدوات الفني الميداني</div>
+        <div style="font-size: 11px; color: var(--text-muted);">حاسبة الإشارة، خلو فرينل، توازن القطبين، الطاقة الشمسية، تقرير الاستلام</div>
+      </div>
+      <div style="font-size: 18px; color: var(--cyan);">←</div>
+    </div>
   </main>
 
   <!-- AR Camera View Overlay -->
@@ -814,6 +927,274 @@
 
       <button class="btn-primary" id="btnSaveConfig">حفظ وبدء التوجيه</button>
       <button class="btn-secondary" id="btnCloseModal">إلغاء</button>
+    </div>
+  </div>
+
+  <!-- Technician Toolkit Modal -->
+  <div class="modal-backdrop" id="toolkitModal">
+    <div class="modal-card" style="max-width: 540px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 22px;">🧰</span>
+          <h3 style="margin: 0;">حقيبة أدوات الفني الميداني</h3>
+        </div>
+        <button class="btn-sm" id="btnCloseToolkit" style="padding: 4px 10px; font-weight: bold;">✕</button>
+      </div>
+
+      <div class="toolkit-tabs" id="toolkitTabsBar">
+        <button class="toolkit-tab active" data-tab="paneRssi">📶 ميزانية الإشارة</button>
+        <button class="toolkit-tab" data-tab="paneFresnel">🏗️ خلو فرينل والصاري</button>
+        <button class="toolkit-tab" data-tab="paneChains">⚖️ توازن القطبين</button>
+        <button class="toolkit-tab" data-tab="paneSolar">☀️ طاقة شمسية</button>
+        <button class="toolkit-tab" data-tab="paneReport">📋 تقرير الرابط</button>
+      </div>
+
+      <!-- Tab 1: Link Budget & RSSI -->
+      <div class="toolkit-pane active" id="paneRssi">
+        <div style="font-size: 11px; color: var(--text-muted);">
+          حساب الفقد في الفضاء الحر (FSPL) وقوة الإشارة المتوقعة (Expected RSSI بالـ dBm) بناءً على قدرات الأجهزة:
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">المسافة بالمتر (m):</label>
+            <input type="number" class="input-field" id="tbDist" value="1500" step="10">
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">التردد (Frequency):</label>
+            <select class="input-field" id="tbFreq">
+              <option value="5.8" selected>5.8 GHz (نطاق 5G الشائع)</option>
+              <option value="5.1">5.1 GHz (نطاق داخلي / منخفض)</option>
+              <option value="2.4">2.4 GHz (نطاق 2.4G القديم)</option>
+              <option value="60">60 GHz (نطاق مليميتري / موجات قصيرة)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">قدرة الإرسال Tx (dBm):</label>
+            <input type="number" class="input-field" id="tbTxPower" value="23" step="1">
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">كسب هوائي الإرسال (dBi):</label>
+            <input type="number" class="input-field" id="tbTxGain" value="16" step="0.5">
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">كسب هوائي الاستقبال (dBi):</label>
+            <input type="number" class="input-field" id="tbRxGain" value="16" step="0.5">
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">فواقد الكابل والوصلات (dB):</label>
+            <input type="number" class="input-field" id="tbCableLoss" value="1.5" step="0.5">
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size: 11px; color: var(--cyan);">قراءة الإشارة الحقيقية المقاسة الآن بالـ dBm (اختياري للمقارنة):</label>
+          <input type="number" class="input-field" id="tbActualRssi" placeholder="مثال: -63 dBm" step="1">
+        </div>
+
+        <!-- Result Box -->
+        <div class="tool-result-box">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; color: var(--text-muted);">فقد الفضاء الحر (FSPL):</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700;" id="tbFsplVal">0.0 dB</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; color: var(--text-muted);">الإشارة النظرية المتوقعة (Expected RSSI):</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800; color: var(--cyan);" id="tbExpectedRssiVal">-00 dBm</span>
+          </div>
+          <div id="tbQualityBadge" class="tool-badge green" style="align-self: flex-start; margin-top: 4px;">
+            جودة الإشارة: ممتازة
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted);" id="tbSpeedEstimate">
+            السرعة المتوقعة: أقصى سرعة (300+ Mbps)
+          </div>
+          <div id="tbCompareBox" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--panel-border); font-size: 11px; display: none;">
+            <!-- filled if actual entered -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Fresnel & Mast Height -->
+      <div class="toolkit-pane" id="paneFresnel">
+        <div style="font-size: 11px; color: var(--text-muted);">
+          حساب خلو 60% من منطقة فرينل (Fresnel Zone) مع تصحيح انحناء كروية الأرض لمعرفة الارتفاع الأدنى المطلوب للماسورة:
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">مسافة الرابط بالمتر (m):</label>
+            <input type="number" class="input-field" id="tfDist" value="1500" step="50">
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">التردد المستخدم (GHz):</label>
+            <select class="input-field" id="tfFreq">
+              <option value="5.8" selected>5.8 GHz</option>
+              <option value="5.1">5.1 GHz</option>
+              <option value="2.4">2.4 GHz</option>
+              <option value="60">60 GHz</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label style="font-size: 11px; color: var(--text-muted);">ارتفاع أعلى عائق في منتصف المسار كالمباني والأشجار بالمتر (اختياري):</label>
+          <input type="number" class="input-field" id="tfObstacle" value="0" step="0.5">
+        </div>
+
+        <div class="tool-result-box">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; color: var(--text-muted);">نصف قطر فرينل الأولى F1:</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700;" id="tfF1Val">0.0 م</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; color: var(--text-muted);">خلو 60% المطلوب هندسياً:</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--cyan);" id="tfClearanceVal">0.0 م</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; color: var(--text-muted);">سهم تحدب كروية الأرض:</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700;" id="tfBulgeVal">0.0 م</span>
+          </div>
+          <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--panel-border); display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 13px; font-weight: 700; color: var(--green);">الحد الأدنى لارتفاع الصاري الموصى به:</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800; color: var(--green);" id="tfMinMastVal">0.0 م</span>
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+            💡 قاعدة ميدانية: يجب ألا يقل ارتفاع رأس الهوائي فوق أي عائق عن هذا الحد لتفادي ضياع الحزم الراديوية أو حدوث انعكاسات طورية.
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Dual Chains Imbalance -->
+      <div class="toolkit-pane" id="paneChains">
+        <div style="font-size: 11px; color: var(--text-muted);">
+          فحص توازن القطبين الرأسي والأفقي (Chain 0 vs Chain 1) لكشف ميل الأنتينا أو العوائق الملاصقة:
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">إشارة القطب الأول Chain 0 (dBm):</label>
+            <input type="number" class="input-field" id="tcChain0" value="-62" step="1">
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">إشارة القطب الثاني Chain 1 (dBm):</label>
+            <input type="number" class="input-field" id="tcChain1" value="-63" step="1">
+          </div>
+        </div>
+
+        <div class="tool-result-box">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; color: var(--text-muted);">الفارق بين القناتين (|Δ|):</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800;" id="tcDeltaVal">1.0 dB</span>
+          </div>
+          <div id="tcStatusBadge" class="tool-badge green" style="align-self: flex-start; margin-top: 4px;">
+            متطابق وسليم تماماً ✅
+          </div>
+          <div style="font-size: 12px; line-height: 1.5; color: #fff; margin-top: 6px;" id="tcAdviceText">
+            الاستقطابان الرأسي والأفقي متوازنان تماماً، الرابط يعمل بأعلى كفاءة MIMO.
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: Solar & Battery Sizing -->
+      <div class="toolkit-pane" id="paneSolar">
+        <div style="font-size: 11px; color: var(--text-muted);">
+          حاسبة حجم منظومة الطاقة الشمسية وبنك البطاريات للمواقع النائية وأبراج التقوية:
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">استهلاك الأنتينا 1 بالواط (W):</label>
+            <input type="number" class="input-field" id="tsRadio1" value="8" step="1">
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">الأنتينا 2 / الراوتر / الكاميرا (W):</label>
+            <input type="number" class="input-field" id="tsRadio2" value="6" step="1">
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">فولتية المنظومة (DC):</label>
+            <select class="input-field" id="tsVoltage">
+              <option value="12" selected>12 فولت (12V DC)</option>
+              <option value="24">24 فولت (24V DC)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">ساعات ذروة الشمس/يوم:</label>
+            <input type="number" class="input-field" id="tsSunHours" value="5.0" step="0.5">
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">ساعات الصمود الاحتياطي (غيوم):</label>
+            <select class="input-field" id="tsAutonomy">
+              <option value="24" selected>24 ساعة (يوم كامل)</option>
+              <option value="48">48 ساعة (يومان)</option>
+              <option value="72">72 ساعة (3 أيام)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">نوع البطارية وعمق التفريغ DoD:</label>
+            <select class="input-field" id="tsBatteryType">
+              <option value="0.5" selected>جل / رصاص حامضي (50% DoD)</option>
+              <option value="0.8">ليثيوم LiFePO4 (80% DoD)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="tool-result-box">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; color: var(--text-muted);">الاستهلاك اليومي الكلي:</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #fff;" id="tsDailyWhVal">336 Wh/يوم</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; color: var(--text-muted);">قدرة اللوح الشمسي المطلوبة:</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 15px; color: var(--amber);" id="tsPanelWattsVal">84 واط (Wp)</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; color: var(--text-muted);">سعة بنك البطاريات المطلوبة:</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 15px; color: var(--green);" id="tsBatteryAhVal">56 Ah</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; color: var(--text-muted);">منظم الشحن الموصى به:</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--cyan);" id="tsControllerVal">10 أمبير (PWM/MPPT)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 5: Site Survey & Report -->
+      <div class="toolkit-pane" id="paneReport">
+        <div style="font-size: 11px; color: var(--text-muted);">
+          توليد تقرير استلام وتوثيق الرابط الميداني ومشاركته مع العميل أو فريق العمل فوراً:
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">اسم الفني:</label>
+            <input type="text" class="input-field" id="trTechName" value="فني الشبكات">
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">موديل الهوائي:</label>
+            <input type="text" class="input-field" id="trAntenna" value="NanoStation Loco 5AC">
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">الموقع الأول (Site A):</label>
+            <input type="text" class="input-field" id="trSiteA" value="الموقع المحلي">
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">الموقع الثاني (Site B):</label>
+            <input type="text" class="input-field" id="trSiteB" value="الموقع المقابل">
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">الإشارة المقاسة (dBm):</label>
+            <input type="number" class="input-field" id="trMeasuredRssi" value="-62" step="1">
+          </div>
+          <div>
+            <label style="font-size: 11px; color: var(--text-muted);">سرعة النقل / السعة المحققة:</label>
+            <input type="text" class="input-field" id="trSpeed" value="300 Mbps">
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size: 11px; color: var(--text-muted);">معاينة نص التقرير الجاهز للإرسال:</label>
+          <textarea class="input-field" id="trReportText" rows="6" readonly style="font-family: inherit; font-size: 11px; line-height: 1.4; resize: none; background: #080d1a;"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-primary" id="btnCopyReport" style="flex: 1;">نسخ للذاكرة 📋</button>
+          <button class="btn-primary" id="btnShareWhatsapp" style="flex: 1; background: #25d366; color: #fff;">إرسال عبر واتساب 💬</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1512,6 +1893,307 @@
     initSensors();
     initMqtt();
     drawCompass();
-  </script>
-</body>
-</html>
+
+    // ==========================================
+    // Technician Toolkit Logic Engine
+    // ==========================================
+    const btnToolkit = document.getElementById('btnToolkit');
+    const btnOpenToolkitMain = document.getElementById('btnOpenToolkitMain');
+    const toolkitModal = document.getElementById('toolkitModal');
+    const btnCloseToolkit = document.getElementById('btnCloseToolkit');
+
+    // Toolkit Tabs Switching
+    const toolkitTabs = document.querySelectorAll('.toolkit-tab');
+    const toolkitPanes = document.querySelectorAll('.toolkit-pane');
+
+    toolkitTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        toolkitTabs.forEach(t => t.classList.remove('active'));
+        toolkitPanes.forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        const targetId = tab.getAttribute('data-tab');
+        const pane = document.getElementById(targetId);
+        if (pane) pane.classList.add('active');
+      });
+    });
+
+    function openToolkit() {
+      // Sync live distance if available
+      if (state.distanceMeters > 0) {
+        document.getElementById('tbDist').value = Math.round(state.distanceMeters);
+        document.getElementById('tfDist').value = Math.round(state.distanceMeters);
+      }
+      
+      // Sync active antenna
+      const selAntenna = antennaSelect.options[antennaSelect.selectedIndex].text;
+      document.getElementById('trAntenna').value = selAntenna;
+      document.getElementById('trSiteA').value = state.myDeviceName;
+      const target = getActiveTarget();
+      document.getElementById('trSiteB').value = target ? target.name : 'الموقع المقابل';
+
+      updateTabRssi();
+      updateTabFresnel();
+      updateTabChains();
+      updateTabSolar();
+      updateTabReport();
+
+      toolkitModal.classList.add('open');
+    }
+
+    btnToolkit.addEventListener('click', openToolkit);
+    btnOpenToolkitMain.addEventListener('click', openToolkit);
+    btnCloseToolkit.addEventListener('click', () => toolkitModal.classList.remove('open'));
+
+    // --- Tab 1: Link Budget & Expected RSSI ---
+    const tbDist = document.getElementById('tbDist');
+    const tbFreq = document.getElementById('tbFreq');
+    const tbTxPower = document.getElementById('tbTxPower');
+    const tbTxGain = document.getElementById('tbTxGain');
+    const tbRxGain = document.getElementById('tbRxGain');
+    const tbCableLoss = document.getElementById('tbCableLoss');
+    const tbActualRssi = document.getElementById('tbActualRssi');
+    const tbFsplVal = document.getElementById('tbFsplVal');
+    const tbExpectedRssiVal = document.getElementById('tbExpectedRssiVal');
+    const tbQualityBadge = document.getElementById('tbQualityBadge');
+    const tbSpeedEstimate = document.getElementById('tbSpeedEstimate');
+    const tbCompareBox = document.getElementById('tbCompareBox');
+
+    function updateTabRssi() {
+      const distM = parseFloat(tbDist.value) || 1500;
+      const freqGhz = parseFloat(tbFreq.value) || 5.8;
+      const txPower = parseFloat(tbTxPower.value) || 23;
+      const txGain = parseFloat(tbTxGain.value) || 16;
+      const rxGain = parseFloat(tbRxGain.value) || 16;
+      const cableLoss = parseFloat(tbCableLoss.value) || 1.5;
+
+      const distKm = Math.max(0.001, distM / 1000.0);
+      const fspl = 92.45 + (20 * Math.log10(distKm)) + (20 * Math.log10(freqGhz));
+      const expected = txPower + txGain + rxGain - fspl - cableLoss;
+
+      tbFsplVal.textContent = `${fspl.toFixed(1)} dB`;
+      tbExpectedRssiVal.textContent = `${expected.toFixed(1)} dBm`;
+
+      if (expected >= -55) {
+        tbQualityBadge.className = 'tool-badge green';
+        tbQualityBadge.textContent = 'جودة الإشارة: مثالية وممتازة جداً 🚀';
+        tbSpeedEstimate.textContent = 'السرعة المتوقعة: أقصى سرعة (300+ Mbps / MCS9 256QAM)';
+      } else if (expected >= -65) {
+        tbQualityBadge.className = 'tool-badge green';
+        tbQualityBadge.textContent = 'جودة الإشارة: جيدة جداً ومستقرة ✅';
+        tbSpeedEstimate.textContent = 'السرعة المتوقعة: سرعة عالية (150 - 300 Mbps / MCS7-8)';
+      } else if (expected >= -75) {
+        tbQualityBadge.className = 'tool-badge amber';
+        tbQualityBadge.textContent = 'جودة الإشارة: مقبولة ولكن حساسة للطقس ⚠️';
+        tbSpeedEstimate.textContent = 'السرعة المتوقعة: سرعة متوسطة (50 - 150 Mbps / MCS4-6)';
+      } else {
+        tbQualityBadge.className = 'tool-badge red';
+        tbQualityBadge.textContent = 'جودة الإشارة: ضعيفة جداً ومعرضة للانقطاع ❌';
+        tbSpeedEstimate.textContent = 'السرعة المتوقعة: سرعة منخفضة (< 50 Mbps / MCS1-3)';
+      }
+
+      const actual = parseFloat(tbActualRssi.value);
+      if (!isNaN(actual)) {
+        tbCompareBox.style.display = 'block';
+        const delta = actual - expected;
+        let compText = '';
+        let compColor = 'var(--green)';
+
+        if (delta >= -3.0) {
+          compText = 'مطابق تماماً للحسابات النظرية والتوجيه مثالي ✅';
+          compColor = 'var(--green)';
+        } else if (delta >= -7.0) {
+          compText = `فقد معتدل (${Math.abs(delta).toFixed(1)} dB): دقق التوجيه الأفقي أو الرأسي ⚠️`;
+          compColor = 'var(--amber)';
+        } else {
+          compText = `فقد جسيم (${Math.abs(delta).toFixed(1)} dB): عائق في المسار أو انحراف حاد أو كابل متضرر ❌`;
+          compColor = 'var(--red)';
+        }
+
+        tbCompareBox.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span>مقارنة القراءة الحقيقية بالنظرية:</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; color: ${compColor};">
+              ${delta >= 0 ? '+' : ''}${delta.toFixed(1)} dB
+            </span>
+          </div>
+          <div style="color: ${compColor};">${compText}</div>
+        `;
+      } else {
+        tbCompareBox.style.display = 'none';
+      }
+    }
+
+    [tbDist, tbFreq, tbTxPower, tbTxGain, tbRxGain, tbCableLoss, tbActualRssi].forEach(el => {
+      el.addEventListener('input', updateTabRssi);
+      el.addEventListener('change', updateTabRssi);
+    });
+
+    // --- Tab 2: Fresnel & Mast Height ---
+    const tfDist = document.getElementById('tfDist');
+    const tfFreq = document.getElementById('tfFreq');
+    const tfObstacle = document.getElementById('tfObstacle');
+    const tfF1Val = document.getElementById('tfF1Val');
+    const tfClearanceVal = document.getElementById('tfClearanceVal');
+    const tfBulgeVal = document.getElementById('tfBulgeVal');
+    const tfMinMastVal = document.getElementById('tfMinMastVal');
+
+    function updateTabFresnel() {
+      const distM = parseFloat(tfDist.value) || 1500;
+      const freqGhz = parseFloat(tfFreq.value) || 5.8;
+      const obstacle = parseFloat(tfObstacle.value) || 0;
+
+      const distKm = Math.max(0.001, distM / 1000.0);
+      const f1 = 8.656 * Math.sqrt(distKm / freqGhz);
+      const clearance60 = 0.6 * f1;
+      const bulge = (distM * distM) / (8.0 * 6371000.0);
+      const minMast = clearance60 + bulge + obstacle;
+
+      tfF1Val.textContent = `${f1.toFixed(1)} م`;
+      tfClearanceVal.textContent = `${clearance60.toFixed(1)} م`;
+      tfBulgeVal.textContent = `${bulge.toFixed(2)} م`;
+      tfMinMastVal.textContent = `${minMast.toFixed(1)} م`;
+    }
+
+    [tfDist, tfFreq, tfObstacle].forEach(el => {
+      el.addEventListener('input', updateTabFresnel);
+      el.addEventListener('change', updateTabFresnel);
+    });
+
+    // --- Tab 3: Dual Chains Imbalance ---
+    const tcChain0 = document.getElementById('tcChain0');
+    const tcChain1 = document.getElementById('tcChain1');
+    const tcDeltaVal = document.getElementById('tcDeltaVal');
+    const tcStatusBadge = document.getElementById('tcStatusBadge');
+    const tcAdviceText = document.getElementById('tcAdviceText');
+
+    function updateTabChains() {
+      const ch0 = parseFloat(tcChain0.value) || -62;
+      const ch1 = parseFloat(tcChain1.value) || -63;
+      const delta = Math.abs(ch0 - ch1);
+
+      tcDeltaVal.textContent = `${delta.toFixed(1)} dB`;
+
+      if (delta <= 2.0) {
+        tcStatusBadge.className = 'tool-badge green';
+        tcStatusBadge.textContent = 'متطابق وسليم تماماً ✅';
+        tcAdviceText.textContent = 'الاستقطابان الرأسي والأفقي متوازنان تماماً، الرابط يعمل بأعلى كفاءة MIMO.';
+      } else if (delta <= 4.5) {
+        tcStatusBadge.className = 'tool-badge amber';
+        tcStatusBadge.textContent = 'انحراف طفيف ⚠️';
+        tcAdviceText.textContent = 'فارق طفيف بين القناتين. قم بضبط دوران الأنتينا الخفيف حول محورها (Skew) لتقليل الفارق.';
+      } else {
+        tcStatusBadge.className = 'tool-badge red';
+        tcStatusBadge.textContent = 'خلل كبير في التوازن ❌';
+        tcAdviceText.textContent = `فارق حاد (${delta.toFixed(1)} dB). الأنتينا مائلة، أو يوجد عائق ملاصق يكسر أحد الاستقطابين (Vertical أو Horizontal) أو رطوبة في الكابل.`;
+      }
+    }
+
+    [tcChain0, tcChain1].forEach(el => {
+      el.addEventListener('input', updateTabChains);
+      el.addEventListener('change', updateTabChains);
+    });
+
+    // --- Tab 4: Solar Sizing ---
+    const tsRadio1 = document.getElementById('tsRadio1');
+    const tsRadio2 = document.getElementById('tsRadio2');
+    const tsVoltage = document.getElementById('tsVoltage');
+    const tsSunHours = document.getElementById('tsSunHours');
+    const tsAutonomy = document.getElementById('tsAutonomy');
+    const tsBatteryType = document.getElementById('tsBatteryType');
+    const tsDailyWhVal = document.getElementById('tsDailyWhVal');
+    const tsPanelWattsVal = document.getElementById('tsPanelWattsVal');
+    const tsBatteryAhVal = document.getElementById('tsBatteryAhVal');
+    const tsControllerVal = document.getElementById('tsControllerVal');
+
+    function updateTabSolar() {
+      const r1 = parseFloat(tsRadio1.value) || 8;
+      const r2 = parseFloat(tsRadio2.value) || 6;
+      const voltage = parseFloat(tsVoltage.value) || 12;
+      const sunHours = Math.max(1.0, parseFloat(tsSunHours.value) || 5.0);
+      const autonomyHours = parseFloat(tsAutonomy.value) || 24;
+      const dod = parseFloat(tsBatteryType.value) || 0.5;
+
+      const dailyWh = (r1 + r2) * 24.0;
+      const panelWatts = Math.ceil((dailyWh / sunHours) * 1.25);
+      const batteryAh = Math.ceil((dailyWh * (autonomyHours / 24.0)) / (voltage * dod));
+      const controllerAmps = Math.ceil((panelWatts / voltage) * 1.2);
+
+      tsDailyWhVal.textContent = `${dailyWh.toFixed(0)} Wh/يوم`;
+      tsPanelWattsVal.textContent = `${panelWatts} واط (Wp)`;
+      tsBatteryAhVal.textContent = `${batteryAh} Ah (@ ${voltage}V)`;
+      tsControllerVal.textContent = `${controllerAmps} أمبير (PWM/MPPT)`;
+    }
+
+    [tsRadio1, tsRadio2, tsVoltage, tsSunHours, tsAutonomy, tsBatteryType].forEach(el => {
+      el.addEventListener('input', updateTabSolar);
+      el.addEventListener('change', updateTabSolar);
+    });
+
+    // --- Tab 5: Site Survey & Report Generator ---
+    const trTechName = document.getElementById('trTechName');
+    const trAntenna = document.getElementById('trAntenna');
+    const trSiteA = document.getElementById('trSiteA');
+    const trSiteB = document.getElementById('trSiteB');
+    const trMeasuredRssi = document.getElementById('trMeasuredRssi');
+    const trSpeed = document.getElementById('trSpeed');
+    const trReportText = document.getElementById('trReportText');
+    const btnCopyReport = document.getElementById('btnCopyReport');
+    const btnShareWhatsapp = document.getElementById('btnShareWhatsapp');
+
+    function updateTabReport() {
+      const dateStr = new Date().toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' });
+      const distStr = valDistance.textContent || '1.5 كم';
+      const azStr = valAzimuth.textContent || '0°';
+      const tiltStr = targetTiltLabel.textContent || '0°';
+      const expRssi = tbExpectedRssiVal.textContent || '-63 dBm';
+      const actRssi = trMeasuredRssi.value ? `${trMeasuredRssi.value} dBm` : expRssi;
+
+      const report = `📋 تقرير توثيق واستلام رابط لاسلكي (Point-to-Point)
+-----------------------------------------------
+📅 التاريخ والوقت: ${dateStr}
+👷 الفني المسؤول: ${trTechName.value || 'فني الشبكات'}
+📡 موديل الهوائي: ${trAntenna.value || 'NanoStation Loco 5AC'}
+
+📍 طرفا الرابط الميداني:
+• المحطة الأولى: ${trSiteA.value || 'الموقع المحلي'}
+• المحطة الثانية: ${trSiteB.value || 'الموقع المقابل'}
+• المسافة المباشرة: ${distStr}
+
+📐 زوايا التوجيه المحققة:
+• زاوية السمت (البوصلة): ${azStr} (${subAzimuth.textContent || 'شمال'})
+• زاوية الميل الرأسي (Tilt): ${tiltStr}
+
+📶 أداء الإشارة اللاسلكية:
+• الإشارة النظرية المتوقعة: ${expRssi}
+• الإشارة الحقيقية المقاسة: ${actRssi}
+• توازن القطبين: Chain 0 (${tcChain0.value} dBm) | Chain 1 (${tcChain1.value} dBm)
+• فارق الاستقطاب: ${tcDeltaVal.textContent} (${tcStatusBadge.textContent})
+• سعة وسرعة النقل: ${trSpeed.value || '300 Mbps'}
+
+💡 التقييم والاعتماد:
+تم توجيه الهوائيات ومطابقة المحاذاة بنجاح عبر تطبيق توجيه برو (Tawjeeh Pro). الرابط مستقر ومطابق للمواصفات الفنية المعتمدة.`;
+
+      trReportText.value = report;
+    }
+
+    [trTechName, trAntenna, trSiteA, trSiteB, trMeasuredRssi, trSpeed].forEach(el => {
+      el.addEventListener('input', updateTabReport);
+      el.addEventListener('change', updateTabReport);
+    });
+
+    btnCopyReport.addEventListener('click', () => {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(trReportText.value).then(() => {
+          alert('تم نسخ تقرير الرابط إلى الحافظة بنجاح! 📋✅');
+        });
+      } else {
+        trReportText.select();
+        document.execCommand('copy');
+        alert('تم نسخ تقرير الرابط! 📋✅');
+      }
+    });
+
+    btnShareWhatsapp.addEventListener('click', () => {
+      const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(trReportText.value)}`;
+      window.open(url, '_blank');
+    });
