@@ -33,6 +33,11 @@
       user-select: none;
     }
 
+    input, textarea, select {
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
     body {
       font-family: 'Cairo', sans-serif;
       background-color: var(--bg-dark);
@@ -1658,6 +1663,10 @@
 
     function initMqtt() {
       try {
+        if (typeof Paho === 'undefined' || !Paho.MQTT) {
+          console.warn('Paho MQTT library not loaded (offline mode)');
+          return;
+        }
         const clientId = 'web_' + state.deviceId;
         mqttClient = new Paho.MQTT.Client('broker.emqx.io', 8084, '/mqtt', clientId);
 
@@ -2197,3 +2206,17 @@
       const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(trReportText.value)}`;
       window.open(url, '_blank');
     });
+
+    // Close Modals on Backdrop Click
+    [modalBackdrop, peersModal, toolkitModal].forEach(modal => {
+      if (modal) {
+        modal.addEventListener('click', e => {
+          if (e.target === modal) {
+            modal.classList.remove('open');
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>
