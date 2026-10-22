@@ -135,7 +135,7 @@ class _CompassFacePainter extends CustomPainter {
     final borderPaint = Paint()
       ..color = Colors.cyan.withOpacity(0.3)
       ..style = PaintingStyle.stroke
-      ..width = 2.0;
+      ..strokeWidth = 2.0;
     canvas.drawCircle(center, radius - 2, borderPaint);
 
     final tickPaint = Paint()
