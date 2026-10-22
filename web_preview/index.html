@@ -813,7 +813,6 @@
       </div>
 
       <button class="btn-primary" id="btnSaveConfig">حفظ وبدء التوجيه</button>
-      <button class="btn-secondary" id="btnSimulatePeer">+ إضافة أجهزة محاكاة تجريبية (لاختبار تعدد الهواتف)</button>
       <button class="btn-secondary" id="btnCloseModal">إلغاء</button>
     </div>
   </div>
@@ -892,7 +891,6 @@
     const btnChangeRoom = document.getElementById('btnChangeRoom');
     const btnCloseModal = document.getElementById('btnCloseModal');
     const btnSaveConfig = document.getElementById('btnSaveConfig');
-    const btnSimulatePeer = document.getElementById('btnSimulatePeer');
     const roomCodeInput = document.getElementById('roomCodeInput');
     const myDeviceNameInput = document.getElementById('myDeviceNameInput');
     const manualLat = document.getElementById('manualLat');
@@ -1508,44 +1506,6 @@
 
       publishCoords();
       modalBackdrop.classList.remove('open');
-    });
-
-    // Test Multi-Peer Simulator
-    btnSimulatePeer.addEventListener('click', () => {
-      if (state.localLat === null) {
-        state.localLat = 30.0444;
-        state.localLon = 31.2357;
-        state.localAlt = 25;
-        state.localAcc = 2.5;
-      }
-
-      // Add 2 simulated stations
-      const id1 = 'sim_station_1';
-      state.peers[id1] = {
-        name: 'برج محطة المعادي (NanoStation)',
-        lat: state.localLat - 0.0075,
-        lon: state.localLon + 0.0085,
-        alt: state.localAlt + 12,
-        acc: 2.0,
-        time: Date.now()
-      };
-
-      const id2 = 'sim_station_2';
-      state.peers[id2] = {
-        name: 'عميل التجمع (LiteBeam)',
-        lat: state.localLat + 0.0120,
-        lon: state.localLon - 0.0060,
-        alt: state.localAlt + 20,
-        acc: 3.0,
-        time: Date.now()
-      };
-
-      state.selectedPeerId = id1;
-      updateCalculations();
-      drawCompass();
-      renderPeersList();
-      modalBackdrop.classList.remove('open');
-      alert('تمت إضافة هاتفين للمحاكاة! اضغط زر 📱 في الأعلى للتبديل بينهما.');
     });
 
     // Initial Launch
