@@ -22,7 +22,7 @@ dependencies:
   http: any
   
   # Camera & AR
-  camera: any
+  camera: ^0.10.5+9
   
   # Local Storage & Utilities
   shared_preferences: any
