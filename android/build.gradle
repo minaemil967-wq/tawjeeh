@@ -11,6 +11,14 @@ allprojects {
         resolutionStrategy {
             force 'androidx.core:core:1.13.1'
             force 'androidx.core:core-ktx:1.13.1'
+            eachDependency { DependencyResolveDetails details ->
+                if (details.requested.group == 'org.jetbrains.kotlin') {
+                    details.useVersion '2.0.21'
+                }
+                if (details.requested.group == 'org.jetbrains.kotlinx' && details.requested.name.startsWith('kotlinx-coroutines')) {
+                    details.useVersion '1.8.1'
+                }
+            }
         }
     }
     tasks.configureEach { task ->
