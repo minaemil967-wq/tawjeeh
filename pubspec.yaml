@@ -21,9 +21,6 @@ dependencies:
   mqtt_client: any
   http: any
   
-  # Audio, Haptics & Vibration
-  vibration: any
-  
   # Camera & AR
   camera: any
   

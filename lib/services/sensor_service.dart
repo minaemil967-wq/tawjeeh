@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:sensors_plus/sensors_plus.dart';
-import 'package:vibration/vibration.dart';
 import '../models/geo_point.dart';
 
 /// خدمة قراءة الحساسات المتكاملة (GPS، البوصلة، زاوية الميل، والاهتزازات)
@@ -38,10 +38,6 @@ class SensorService {
 
   /// تهيئة الحساسات وطلب الأذونات
   Future<bool> initSensors() async {
-    try {
-      _hasVibrator = (await Vibration.hasVibrator()) ?? false;
-    } catch (_) {}
-
     // فحص إذن الموقع الجغرافي
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
@@ -100,21 +96,19 @@ class SensorService {
 
   /// إطلاق اهتزاز تفاعلي عند الاقتراب أو التطابق
   void triggerAlignmentHaptic(double errorDegrees) {
-    if (!_hasVibrator) return;
-
     final now = DateTime.now();
     final absErr = errorDegrees.abs();
 
     if (absErr <= 2.0) {
       // تطابق كامل: اهتزاز مستمر خفيف
       if (now.difference(_lastVibeTime).inMilliseconds > 200) {
-        Vibration.vibrate(duration: 80, amplitude: 255);
+        HapticFeedback.heavyImpact();
         _lastVibeTime = now;
       }
     } else if (absErr <= 8.0) {
       // اقتراب: نبضات متباعدة
       if (now.difference(_lastVibeTime).inMilliseconds > 600) {
-        Vibration.vibrate(duration: 40, amplitude: 128);
+        HapticFeedback.lightImpact();
         _lastVibeTime = now;
       }
     }
